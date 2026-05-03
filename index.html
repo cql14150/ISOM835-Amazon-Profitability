@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Amazon Order Profitability Prediction | ISOM 835</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --navy:   #1a3557;
+      --blue:   #2980b9;
+      --sky:    #d6eaf8;
+      --green:  #1e8449;
+      --lgreen: #d5f5e3;
+      --red:    #c0392b;
+      --lred:   #fadbd8;
+      --gray:   #f4f6f8;
+      --dgray:  #566573;
+      --white:  #ffffff;
+      --text:   #1c2833;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      background: var(--white);
+      line-height: 1.7;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--navy);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem;
+      height: 56px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+    nav .brand {
+      font-family: 'DM Serif Display', serif;
+      color: var(--white); font-size: 1.1rem; letter-spacing: 0.02em;
+    }
+    nav ul {
+      list-style: none; display: flex; gap: 0.25rem;
+    }
+    nav ul li a {
+      color: rgba(255,255,255,0.75);
+      text-decoration: none; font-size: 0.85rem; font-weight: 500;
+      padding: 0.4rem 0.8rem; border-radius: 4px;
+      transition: all 0.2s;
+    }
+    nav ul li a:hover { color: var(--white); background: rgba(255,255,255,0.1); }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1d4e89 60%, #2471a3 100%);
+      color: var(--white);
+      padding: 5rem 2rem 4rem;
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.9);
+      font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.35rem 1rem; border-radius: 100px;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      line-height: 1.15; margin-bottom: 1rem;
+    }
+    .hero p {
+      font-size: 1.1rem; color: rgba(255,255,255,0.8);
+      max-width: 600px; margin: 0 auto 2rem;
+    }
+    .hero-meta {
+      display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;
+      font-size: 0.85rem; color: rgba(255,255,255,0.65);
+      margin-bottom: 2.5rem;
+    }
+    .hero-meta span::before { content: '•'; margin-right: 0.4rem; color: var(--blue); }
+    .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.75rem 1.75rem; border-radius: 6px;
+      font-size: 0.9rem; font-weight: 600;
+      text-decoration: none; transition: all 0.2s;
+      cursor: pointer; border: none;
+    }
+    .btn-primary {
+      background: var(--white); color: var(--navy);
+    }
+    .btn-primary:hover { background: var(--sky); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+    .btn-outline {
+      background: transparent; color: var(--white);
+      border: 1.5px solid rgba(255,255,255,0.4);
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
+
+    /* ── KPI STRIP ── */
+    .kpi-strip {
+      background: var(--gray);
+      border-bottom: 1px solid #e0e0e0;
+      padding: 2rem;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem; text-align: center;
+    }
+    .kpi-card {
+      background: var(--white);
+      border-radius: 10px; padding: 1.25rem 1rem;
+      border: 1px solid #e8ecf0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      transition: transform 0.2s;
+    }
+    .kpi-card:hover { transform: translateY(-2px); }
+    .kpi-value {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2rem; color: var(--navy); line-height: 1;
+    }
+    .kpi-label {
+      font-size: 0.78rem; color: var(--dgray);
+      font-weight: 500; margin-top: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    /* ── SECTIONS ── */
+    .container { max-width: 900px; margin: 0 auto; padding: 0 2rem; }
+    section { padding: 4rem 0; }
+    section:nth-child(even) { background: var(--gray); }
+
+    .section-label {
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--blue);
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.9rem; color: var(--navy);
+      margin-bottom: 1.25rem; line-height: 1.2;
+    }
+    h3 {
+      font-size: 1.05rem; font-weight: 600; color: var(--navy);
+      margin: 1.5rem 0 0.5rem;
+    }
+    p { color: #3d4a5c; margin-bottom: 0.8rem; }
+
+    .divider {
+      height: 3px; width: 48px;
+      background: linear-gradient(90deg, var(--blue), var(--sky));
+      border-radius: 2px; margin-bottom: 1.5rem;
+    }
+
+    /* ── OVERVIEW GRID ── */
+    .overview-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 1rem; margin-top: 1.5rem;
+    }
+    @media(max-width:600px){ .overview-grid { grid-template-columns: 1fr; } }
+    .overview-card {
+      background: var(--white); border: 1px solid #e0e8f0;
+      border-left: 4px solid var(--blue);
+      border-radius: 8px; padding: 1.25rem 1.5rem;
+    }
+    .overview-card h4 { font-size: 0.85rem; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .overview-card p { font-size: 0.92rem; margin: 0; color: var(--text); }
+
+    /* ── DATASET TABLE ── */
+    .data-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .data-table th {
+      background: var(--navy); color: var(--white);
+      font-size: 0.85rem; font-weight: 600;
+      padding: 0.75rem 1rem; text-align: left;
+    }
+    .data-table td {
+      padding: 0.7rem 1rem; font-size: 0.9rem;
+      border-bottom: 1px solid #e8ecf0;
+    }
+    .data-table tr:nth-child(even) td { background: var(--gray); }
+    .data-table tr:hover td { background: var(--sky); }
+
+    /* ── STEPS ── */
+    .steps { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+    .step {
+      display: flex; gap: 1.25rem; align-items: flex-start;
+      background: var(--white); border: 1px solid #e0e8f0;
+      border-radius: 10px; padding: 1.25rem 1.5rem;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 36px; height: 36px;
+      background: var(--navy); color: var(--white);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-family: 'DM Serif Display', serif; font-size: 1rem;
+    }
+    .step-body h4 { font-size: 0.95rem; font-weight: 600; color: var(--navy); margin-bottom: 0.25rem; }
+    .step-body p { font-size: 0.88rem; color: var(--dgray); margin: 0; }
+
+    /* ── RESULTS TABLE ── */
+    .results-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .results-table th {
+      background: var(--navy); color: var(--white);
+      padding: 0.75rem 1.25rem; font-size: 0.85rem; text-align: center;
+    }
+    .results-table th:first-child { text-align: left; }
+    .results-table td {
+      padding: 0.75rem 1.25rem; font-size: 0.92rem;
+      border-bottom: 1px solid #e8ecf0; text-align: center;
+    }
+    .results-table td:first-child { text-align: left; font-weight: 500; }
+    .results-table tr:nth-child(even) td { background: var(--gray); }
+    .results-table .best td {
+      background: var(--lgreen) !important;
+      font-weight: 700; color: var(--green);
+    }
+
+    /* ── FINDINGS ── */
+    .findings-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem; margin-top: 1.5rem;
+    }
+    .finding-card {
+      background: var(--white); border: 1px solid #e0e8f0;
+      border-radius: 10px; padding: 1.5rem;
+      border-top: 3px solid var(--blue);
+    }
+    .finding-card .icon { font-size: 1.8rem; margin-bottom: 0.75rem; }
+    .finding-card h4 { font-size: 0.95rem; font-weight: 600; color: var(--navy); margin-bottom: 0.5rem; }
+    .finding-card p { font-size: 0.875rem; color: var(--dgray); margin: 0; }
+
+    /* ── RISK TABLE ── */
+    .risk-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 1rem; margin-top: 1.5rem;
+    }
+    @media(max-width:600px){ .risk-grid { grid-template-columns: 1fr; } }
+    .risk-card {
+      border-radius: 10px; padding: 1.25rem 1.5rem;
+    }
+    .risk-high { background: var(--lred); border: 1px solid #f1948a; }
+    .risk-low  { background: var(--lgreen); border: 1px solid #82e0aa; }
+    .risk-card h4 { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.75rem; }
+    .risk-high h4 { color: var(--red); }
+    .risk-low  h4 { color: var(--green); }
+    .risk-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.4rem 0; border-bottom: 1px solid rgba(0,0,0,0.07);
+      font-size: 0.875rem;
+    }
+    .risk-item:last-child { border-bottom: none; }
+    .risk-pct { font-weight: 700; font-size: 0.95rem; }
+    .risk-high .risk-pct { color: var(--red); }
+    .risk-low  .risk-pct { color: var(--green); }
+
+    /* ── RECOMMENDATIONS ── */
+    .rec-list { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem; }
+    .rec-item {
+      display: flex; gap: 1rem; align-items: flex-start;
+      background: var(--white); border: 1px solid #e0e8f0;
+      border-radius: 8px; padding: 1rem 1.25rem;
+    }
+    .rec-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .rec-body h4 { font-size: 0.92rem; font-weight: 600; color: var(--navy); margin-bottom: 0.2rem; }
+    .rec-body p { font-size: 0.85rem; color: var(--dgray); margin: 0; }
+
+    /* ── LINKS SECTION ── */
+    .links-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem; margin-top: 1.5rem;
+    }
+    .link-card {
+      background: var(--white); border: 1px solid #e0e8f0;
+      border-radius: 10px; padding: 1.5rem;
+      text-align: center; text-decoration: none;
+      transition: all 0.2s; color: var(--text);
+    }
+    .link-card:hover { border-color: var(--blue); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(41,128,185,0.12); }
+    .link-card .link-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+    .link-card h4 { font-size: 0.95rem; font-weight: 600; color: var(--navy); margin-bottom: 0.25rem; }
+    .link-card p { font-size: 0.82rem; color: var(--dgray); margin: 0; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--navy); color: rgba(255,255,255,0.6);
+      text-align: center; padding: 2rem;
+      font-size: 0.85rem;
+    }
+    footer strong { color: var(--white); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hero h1, .hero p, .hero-btns { animation: fadeUp 0.6s ease both; }
+    .hero p { animation-delay: 0.1s; }
+    .hero-btns { animation-delay: 0.2s; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="brand">ISOM 835 — Term Project</div>
+  <ul>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#dataset">Dataset</a></li>
+    <li><a href="#methodology">Methodology</a></li>
+    <li><a href="#results">Results</a></li>
+    <li><a href="#insights">Insights</a></li>
+    <li><a href="#links">Links</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-badge">ISOM 835 · Suffolk University · Sawyer Business School</div>
+  <h1>Amazon Order<br>Profitability Prediction</h1>
+  <p>Using machine learning to predict whether an Amazon sales order will be profitable or result in a loss — enabling smarter pricing and fulfillment decisions.</p>
+  <div class="hero-meta">
+    <span>Predictive Analytics & Machine Learning</span>
+    <span>Instructor: Hasan Arslan</span>
+    <span>Western US · 2011–2015</span>
+  </div>
+  <div class="hero-btns">
+    <a href="https://colab.research.google.com/drive/1GYIe2Bjb7vOEAFlRhVVi1hQO0Q7SUnQl?usp=sharing" target="_blank" class="btn btn-primary">📓 Open Colab Notebook</a>
+    <a href="https://github.com/cql14150/ISOM835-Amazon-Profitability" target="_blank" class="btn btn-outline">⭐ View on GitHub</a>
+  </div>
+</header>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip">
+  <div class="kpi-card"><div class="kpi-value">3,203</div><div class="kpi-label">Orders</div></div>
+  <div class="kpi-card"><div class="kpi-value">16</div><div class="kpi-label">Features</div></div>
+  <div class="kpi-card"><div class="kpi-value">3</div><div class="kpi-label">ML Models</div></div>
+  <div class="kpi-card"><div class="kpi-value">91.7%</div><div class="kpi-label">Best Accuracy</div></div>
+  <div class="kpi-card"><div class="kpi-value">0.923</div><div class="kpi-label">ROC-AUC</div></div>
+  <div class="kpi-card"><div class="kpi-value">0%</div><div class="kpi-label">Missing Values</div></div>
+</div>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="container">
+    <div class="section-label">Project Overview</div>
+    <h2>Business Problem & Objectives</h2>
+    <div class="divider"></div>
+    <p>In e-commerce, not every sale is profitable. Heavy discounts, high shipping costs, and low-margin product categories can erode or eliminate profits — even on large revenue orders. This project builds a machine learning classifier to predict order profitability <em>before</em> fulfillment, enabling Amazon to intervene with smarter pricing and discount strategies.</p>
+    <div class="overview-grid">
+      <div class="overview-card">
+        <h4>Research Questions</h4>
+        <p>Can we predict whether an order will be profitable? Which categories and features drive losses most?</p>
+      </div>
+      <div class="overview-card">
+        <h4>Target Variable</h4>
+        <p>Binary classification — <strong>Profitable (1)</strong> vs <strong>Loss (0)</strong> based on order profit margin.</p>
+      </div>
+      <div class="overview-card">
+        <h4>Approach</h4>
+        <p>Full ML pipeline: EDA → Preprocessing → Model training → Evaluation → Business insights.</p>
+      </div>
+      <div class="overview-card">
+        <h4>Impact</h4>
+        <p>Real-time profitability scoring at checkout to flag high-risk orders before resources are committed.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATASET -->
+<section id="dataset">
+  <div class="container">
+    <div class="section-label">Data</div>
+    <h2>Dataset — Amazonsale_dataset.xlsx</h2>
+    <div class="divider"></div>
+    <p>Amazon sales records from the Western United States, covering 3,203 order transactions across 17 product categories, 11 states, and 170 cities.</p>
+    <table class="data-table">
+      <tr><th>Attribute</th><th>Value</th></tr>
+      <tr><td>File</td><td>Amazonsale_dataset.xlsx</td></tr>
+      <tr><td>Total Records</td><td>3,203 orders</td></tr>
+      <tr><td>Features</td><td>16 (original + engineered)</td></tr>
+      <tr><td>Date Range</td><td>January 2011 — December 2015</td></tr>
+      <tr><td>States Covered</td><td>11 (Western US)</td></tr>
+      <tr><td>Product Categories</td><td>17</td></tr>
+      <tr><td>Target Variable</td><td>Profitable (1) / Loss (0)</td></tr>
+      <tr><td>Class Balance</td><td>89.4% Profitable / 10.6% Loss</td></tr>
+      <tr><td>Missing Values</td><td>None (0%)</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- METHODOLOGY -->
+<section id="methodology">
+  <div class="container">
+    <div class="section-label">Methodology</div>
+    <h2>Data Science Pipeline</h2>
+    <div class="divider"></div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Exploratory Data Analysis</h4>
+          <p>Analyzed distributions, correlations, and patterns across 16 features. Generated 10 meaningful visualizations including heatmaps, boxplots, and category-level loss rate charts.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Data Preprocessing</h4>
+          <p>Encoded categorical variables (Category, State, Sales Size) using LabelEncoder. Applied StandardScaler for Logistic Regression. Stratified 80/20 train-test split.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Model Development</h4>
+          <p>Trained and compared 3 models: Logistic Regression (baseline), Random Forest, and Gradient Boosting. Used 8 features including Sales, Quantity, Category, State, and Shipping Days.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>Model Evaluation</h4>
+          <p>Evaluated using Accuracy, F1-Score, and ROC-AUC. Generated confusion matrices and ROC curves for all models. Selected Gradient Boosting as the best performer.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h4>Business Insights</h4>
+          <p>Translated technical findings into actionable recommendations for pricing strategy, category management, and real-time order screening.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section id="results">
+  <div class="container">
+    <div class="section-label">Results</div>
+    <h2>Model Performance Comparison</h2>
+    <div class="divider"></div>
+    <p>Gradient Boosting outperforms both alternatives across all three metrics, achieving the highest discriminative power with a ROC-AUC of 0.923.</p>
+    <table class="results-table">
+      <tr>
+        <th>Model</th>
+        <th>Accuracy</th>
+        <th>F1-Score</th>
+        <th>ROC-AUC</th>
+        <th>Status</th>
+      </tr>
+      <tr>
+        <td>Logistic Regression</td>
+        <td>89.39%</td><td>0.9440</td><td>0.537</td>
+        <td>Baseline</td>
+      </tr>
+      <tr>
+        <td>Random Forest</td>
+        <td>90.48%</td><td>0.9493</td><td>0.878</td>
+        <td>Good</td>
+      </tr>
+      <tr class="best">
+        <td>✅ Gradient Boosting</td>
+        <td>91.73%</td><td>0.9550</td><td>0.923</td>
+        <td>Best Model</td>
+      </tr>
+    </table>
+    <h3>Top Feature Importances (Gradient Boosting)</h3>
+    <table class="data-table" style="margin-top:0.75rem">
+      <tr><th>Feature</th><th>Importance</th><th>Business Interpretation</th></tr>
+      <tr><td>Product Category</td><td><strong>25.2%</strong></td><td>Category type drives entire cost structure</td></tr>
+      <tr><td>Sales Amount ($)</td><td><strong>22.7%</strong></td><td>Higher sales improve cost coverage</td></tr>
+      <tr><td>Customer State</td><td><strong>18.4%</strong></td><td>Regional logistics costs vary significantly</td></tr>
+      <tr><td>Order Quantity</td><td>8.9%</td><td>Volume affects unit-level margin</td></tr>
+      <tr><td>Order Month</td><td>8.6%</td><td>Seasonal demand & pricing patterns</td></tr>
+      <tr><td>Shipping Days</td><td>7.7%</td><td>Faster shipping = higher fulfillment cost</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- INSIGHTS -->
+<section id="insights">
+  <div class="container">
+    <div class="section-label">Business Insights</div>
+    <h2>Key Findings & Recommendations</h2>
+    <div class="divider"></div>
+
+    <div class="risk-grid">
+      <div class="risk-card risk-high">
+        <h4>🔴 High-Risk Categories</h4>
+        <div class="risk-item"><span>Tables</span><span class="risk-pct">42.2% loss</span></div>
+        <div class="risk-item"><span>Bookcases</span><span class="risk-pct">40.0% loss</span></div>
+        <div class="risk-item"><span>Chairs</span><span class="risk-pct">36.2% loss</span></div>
+        <div class="risk-item"><span>Machines</span><span class="risk-pct">20.5% loss</span></div>
+        <div class="risk-item"><span>Binders</span><span class="risk-pct">16.3% loss</span></div>
+      </div>
+      <div class="risk-card risk-low">
+        <h4>🟢 Zero-Loss Categories</h4>
+        <div class="risk-item"><span>Paper</span><span class="risk-pct">0.0% loss</span></div>
+        <div class="risk-item"><span>Art</span><span class="risk-pct">0.0% loss</span></div>
+        <div class="risk-item"><span>Appliances</span><span class="risk-pct">0.0% loss</span></div>
+        <div class="risk-item"><span>Labels</span><span class="risk-pct">0.0% loss</span></div>
+        <div class="risk-item"><span>Envelopes</span><span class="risk-pct">0.0% loss</span></div>
+      </div>
+    </div>
+
+    <div class="rec-list" style="margin-top:2rem">
+      <div class="rec-item">
+        <div class="rec-icon">💰</div>
+        <div class="rec-body">
+          <h4>Reprice furniture categories</h4>
+          <p>Audit discount policies for Tables, Bookcases, and Chairs. Set minimum price floors or renegotiate supplier costs to reduce 130+ annual loss-generating orders.</p>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-icon">📈</div>
+        <div class="rec-body">
+          <h4>Expand zero-loss category offerings</h4>
+          <p>Paper, Art, and Appliances have 0% loss rate over 4+ years. Increasing inventory depth in these categories offers reliable, low-risk revenue growth.</p>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-icon">🤖</div>
+        <div class="rec-body">
+          <h4>Deploy real-time profitability scoring</h4>
+          <p>The Gradient Boosting model (AUC 0.923) can be deployed as an API to flag high-risk orders at checkout, enabling price adjustments before fulfillment.</p>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-icon">📍</div>
+        <div class="rec-body">
+          <h4>Review Colorado & Washington markets</h4>
+          <p>These states show above-average loss rates. A region-specific pricing review can identify whether the issue is logistics costs or aggressive discounting.</p>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-icon">📋</div>
+        <div class="rec-body">
+          <h4>Implement discount approval workflows</h4>
+          <p>Sales Amount is the 2nd most important predictor. Large orders that still generate losses likely have excessive discounts — approval workflows can prevent many losses.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LINKS -->
+<section id="links">
+  <div class="container">
+    <div class="section-label">Project Resources</div>
+    <h2>Links & Deliverables</h2>
+    <div class="divider"></div>
+    <div class="links-grid">
+      <a href="https://colab.research.google.com/drive/1GYIe2Bjb7vOEAFlRhVVi1hQO0Q7SUnQl?usp=sharing" target="_blank" class="link-card">
+        <div class="link-icon">📓</div>
+        <h4>Google Colab Notebook</h4>
+        <p>Full analysis code with EDA, preprocessing, and model training</p>
+      </a>
+      <a href="https://github.com/cql14150/ISOM835-Amazon-Profitability" target="_blank" class="link-card">
+        <div class="link-icon">💻</div>
+        <h4>GitHub Repository</h4>
+        <p>Source code, visualizations, dataset, and final report</p>
+      </a>
+      <a href="https://github.com/cql14150/ISOM835-Amazon-Profitability/tree/main/Report" target="_blank" class="link-card">
+        <div class="link-icon">📄</div>
+        <h4>Final Report PDF</h4>
+        <p>10-page professional business report with full analysis</p>
+      </a>
+      <a href="https://github.com/cql14150/ISOM835-Amazon-Profitability/tree/main/Visualizations" target="_blank" class="link-card">
+        <div class="link-icon">📊</div>
+        <h4>Visualizations</h4>
+        <p>10 charts including EDA, model comparison, and ROC curves</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p><strong>ISOM 835 — Predictive Analytics and Machine Learning</strong></p>
+  <p style="margin-top:0.5rem">Suffolk University · Sawyer Business School · Instructor: Hasan Arslan</p>
+  <p style="margin-top:0.5rem">Dataset: Amazonsale_dataset.xlsx · Tools: Python, scikit-learn, pandas, matplotlib</p>
+</footer>
+
+</body>
+</html>
